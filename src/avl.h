@@ -89,7 +89,7 @@ bool avl_iter_in_forward(AVL_Iter *iter);
 * Pre: La estructura avl y el iterador fueron inicializados.
 * Post: key actual que corresponde a la posición del iterador o NULL si no hay.
 */
-const char *avl_iter_in_get_actual(const AVL_Iter *iter);
+const char *avl_iter_in_get_current(const AVL_Iter *iter);
 
 /* Comprueba si terminó la iteración. 
 * Pre: La estructura avl y el iterador fueron inicializados.
