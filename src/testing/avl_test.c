@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>  // For ssize_t in Linux.
 
-#include "avl.h"
+#include "../avl.h"
 #include "testing.h"
 
 #define VOLUMEN 100
