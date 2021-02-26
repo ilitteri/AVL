@@ -171,3 +171,8 @@ bool avl_belongs(const AVL *avl, const char *key)
 
     return avl->cmp(node->key, key) == 0;
 }
+
+size_t avl_count(AVL *avl)
+{
+    return avl == NULL ? 0 : avl->count;
+}
