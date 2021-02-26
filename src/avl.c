@@ -278,3 +278,9 @@ bool avl_iter_in_finished(const AVL_Iter *iter)
 {
     return stack_is_empty(iter->states);
 }
+
+void avl_iter_in_destroy(AVL_Iter *iter)
+{
+    stack_destroy(iter->states);
+    free(iter);
+}
