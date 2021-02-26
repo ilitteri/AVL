@@ -27,6 +27,7 @@ struct AVL_Iter
 };
 
 static Node *node_create(const char *key, void *data);
+static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp);
 
 static Node *node_create(const char *key, void *data)
 {
@@ -48,7 +49,7 @@ static Node *node_create(const char *key, void *data)
     strcpy(copy, key);
 
     node->key = copy;
-    node->dato = data;
+    node->data = data;
     node->left = NULL;
     node->right = NULL;
 
@@ -70,4 +71,69 @@ AVL *avl_crear(avl_cmp_key cmp, avl_destroy_data destroy_data)
     avl->count = 0;
 
     return avl;
+}
+
+static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp)
+{
+    if (current == NULL)
+    {
+        return previous;
+    }
+
+    int comparison = cmp(key, current->key);
+
+    return comparison == 0 ? current : comparison < 0 ? search_node(current->left, current, key, cmp)
+                                                       : search_node(current->right, current, key, cmp);
+}
+
+bool avl_save(AVL *avl, const char *key, void *data)
+{
+    if (avl == NULL)
+    {
+        return false;
+    }
+
+    if (avl->count == 0)
+    {
+        if ((avl->root = node_create(key, data)) == NULL)
+        {
+            return false;
+        }
+    }
+
+    else
+    {
+        Node *aux = search_node(avl->root, NULL, key, avl->cmp);
+        int comparison = avl->cmp(key, aux->key);
+
+        if (comparison == 0)
+        {
+            if (avl->destroy_data != NULL)
+            {
+                avl->destroy_data(aux->data);
+            }
+            aux->data = data;
+            return true;
+        }
+
+        else if (comparison < 0)
+        {
+            if ((aux->izq = node_create(key, data)) == NULL)
+            {
+                return false;
+            }
+        }
+
+        else if (comparison > 0)
+        {
+            if ((aux->der = node_create(key, data)) == NULL)
+            {
+                return false;
+            }
+        }
+    }
+
+    avl->count++;
+
+    return true;
 }
