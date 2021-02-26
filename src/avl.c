@@ -581,7 +581,9 @@ void avl_destroy(AVL *avl)
 static void _avl_in_order(Node *current, bool func(const char *, void *, void *), void *extra, bool *visit)
 {
     if (current == NULL || func == NULL || !(*visit))
+    {
         return;
+    }
 
     // left - current - Der
     _avl_in_order(current->left, func, extra, visit);
@@ -595,7 +597,9 @@ static void _avl_in_order(Node *current, bool func(const char *, void *, void *)
 void avl_in_order(AVL *avl, bool func(const char *, void *, void *), void *extra)
 {
     if (avl == NULL)
+    {
         return;
+    }
     bool visit = true;
     _avl_in_order(avl->root, func, extra, &visit);
 }

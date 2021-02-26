@@ -2,22 +2,22 @@ SOURCE_DIR := src
 BUILD_DIR := build
 TARGET := main
 
-# TDA := none
+TDA := avl
 
 SOURCES := $(shell find $(SOURCE_DIR)/ -type f -name "*.c")
 OBJS := $(SOURCES:%.c=$(BUILD_DIR)/%.o)
 
 LDLIBS := -lm
 LDFLAGS := -g
-CFLAGS := -g -std=c99 -Wall -Wconversion -Wtype-limits -pedantic -Werror
+CFLAGS := -g -std=c11 -Wall -Wconversion -Wtype-limits -pedantic -Werror
 
 all: $(BUILD_DIR)/$(TARGET)
 
 test:
 	valgrind --leak-check=full --show-leak-kinds=all -s $(BUILD_DIR)/main
 
-# coverage: 
-# 	./cover.sh $(TDA).c *.c
+coverage: 
+	./cover.sh $(SOURCE_DIR)/$(TDA).c $(SOURCE_DIR)/*.c
 
 clean:
 	rm -rf -- build
