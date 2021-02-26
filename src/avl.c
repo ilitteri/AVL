@@ -27,7 +27,7 @@ struct AVL_Iter
 };
 
 static Node *node_create(const char *key, void *data);
-static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp);
+static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp, Stack *insertion_walk);
 static void destroy_node(Node *current, avl_destroy_data destroy_data)
 static void _avl_destroy(Node *current, avl_destroy_data destroy_data)
 
@@ -75,17 +75,56 @@ AVL *avl_crear(avl_cmp_key cmp, avl_destroy_data destroy_data)
     return avl;
 }
 
-static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp)
+static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp, Stack *insertion_walk)
 {
     if (current == NULL)
     {
         return previous;
     }
 
+    if (insertion_walk != NULL)
+    {
+        push(insertion_walk, current);
+    }
+
     int comparison = cmp(key, current->key);
 
     return comparison == 0 ? current : comparison < 0 ? search_node(current->left, current, key, cmp)
                                                        : search_node(current->right, current, key, cmp);
+}
+
+static bool avl_condition(Node *z)
+{
+    if (z == NULL)
+    {
+        return false;
+    }
+    return abs(node_height(z->left) - node_height(z->right)) <= 1
+}
+
+static void is_avl(Stack *insertion_walk)
+{
+    Node *x, *y, *z, *a;
+
+    x = pop(insertion_walk);
+    y = pop(insertion_walk);
+    z = pop(insertion_walk);
+    a = pop(insertion_walk);
+
+    bool avl = true;
+
+    while (avl &= avl_condition(z))
+    {
+        x = y;
+        y = z;
+        z = a;
+        a = pop(insertion_walk);
+    }
+
+    if (!avl)
+    {
+       balance_tree(a, z, y, x);
+    }
 }
 
 bool avl_save(AVL *avl, const char *key, void *data)
@@ -105,7 +144,8 @@ bool avl_save(AVL *avl, const char *key, void *data)
 
     else
     {
-        Node *aux = search_node(avl->root, NULL, key, avl->cmp);
+        Stack *insertion_walk = stack_create();
+        Node *aux = search_node(avl->root, NULL, key, avl->cmp, insertion_walk);
         int comparison = avl->cmp(key, aux->key);
 
         if (comparison == 0)
@@ -133,6 +173,8 @@ bool avl_save(AVL *avl, const char *key, void *data)
                 return false;
             }
         }
+
+        is_avl(insertion_walk);
     }
 
     avl->count++;
