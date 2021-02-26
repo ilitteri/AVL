@@ -273,3 +273,8 @@ const char *avl_iter_in_get_actual(const AVL_Iter *iter)
 {
     return stack_is_empty(iter->states) ? NULL : ((Node *)stack_first(iter->states))->key;
 }
+
+bool avl_iter_in_finished(const AVL_Iter *iter)
+{
+    return stack_is_empty(iter->states);
+}
