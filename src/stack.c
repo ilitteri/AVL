@@ -35,7 +35,7 @@ Stack *stack_create()
     return stack;
 }
 
-void stack_destruir(Stack *stack)
+void stack_destroy(Stack *stack)
 {
     free(stack->data);
     free(stack);
