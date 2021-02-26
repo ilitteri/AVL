@@ -249,3 +249,22 @@ AVL_Iter *avl_iter_in_create(const AVL *avl)
 
     return iter;
 }
+
+bool avl_iter_in_forward(AVL_Iter *iter)
+{
+    if (stack_is_empty(iter->states))
+    {
+        return false;
+    }
+
+    Node *current;
+
+    if ((current = stack_dequeue(iter->states)) == NULL)
+    {
+        return false;
+    }
+
+    establecer_orden_iteracion(current->der, iter->states);
+
+    return true;
+}
