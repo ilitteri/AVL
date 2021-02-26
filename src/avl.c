@@ -149,7 +149,7 @@ void *avl_get(const AVL *avl, const char *key)
 
     Node *node;
 
-    if ((node = search_node(avl->raiz, NULL, key, avl->cmp)) == NULL)
+    if ((node = search_node(avl->root, NULL, key, avl->cmp)) == NULL)
     {
         return NULL;
     }
@@ -166,7 +166,7 @@ bool avl_belongs(const AVL *avl, const char *key)
 
     Node *node;
 
-    if ((node = buscar_nodo(avl->raiz, NULL, key, avl->cmp)) == NULL)
+    if ((node = buscar_nodo(avl->root, NULL, key, avl->cmp)) == NULL)
     {
         return false;
     }
@@ -209,8 +209,43 @@ static void _avl_destroy(Node *current, avl_destroy_data destroy_data)
     destroy_node(current, destroy_data);
 }
 
-void avl_destroy(AVL *abb)
+void avl_destroy(AVL *avl)
 {
-    _avl_destroy(abb->raiz, abb->destroy_data);
-    free(abb);
+    _avl_destroy(avl->root, avl->destroy_data);
+    free(avl);
+}
+
+void enqueue_nodes(Node *current, Stack *states)
+{
+    if (current == NULL)
+    {
+        return;
+    }
+    stack_enqueue(states, current);
+    enqueue_nodes(current->left, states); //apilar states iniciales
+}
+
+AVL_Iter *avl_iter_in_create(const AVL *avl)
+{
+    if (avl == NULL)
+    {
+        return NULL;
+    }
+
+    AVL_Iter *iter;
+
+    if ((iter = malloc(sizeof(AVL_Iter))) == NULL)
+    {
+        return NULL;
+    }
+
+    if ((iter->states = stack_create()) == NULL)
+    {
+        free(iter);
+        return NULL;
+    }
+
+    enqueue_nodes(avl->root, iter->states);
+
+    return iter;
 }
