@@ -28,6 +28,8 @@ struct AVL_Iter
 
 static Node *node_create(const char *key, void *data);
 static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp);
+static void destroy_node(Node *current, avl_destroy_data destroy_data)
+static void _avl_destroy(Node *current, avl_destroy_data destroy_data)
 
 static Node *node_create(const char *key, void *data)
 {
@@ -175,4 +177,40 @@ bool avl_belongs(const AVL *avl, const char *key)
 size_t avl_count(AVL *avl)
 {
     return avl == NULL ? 0 : avl->count;
+}
+
+static void destroy_node(Node *current, avl_destroy_data destroy_data)
+{
+    if (destroy_data != NULL)
+    {
+        destroy_data(current->data);
+    }
+    free(current->key);
+    free(current);
+}
+
+static void _avl_destroy(Node *current, avl_destroy_data destroy_data)
+{
+    if (current == NULL)
+    {
+        return;
+    }
+
+    if (current->izq != NULL)
+    {
+        _avl_destroy(current->izq, destroy_data);
+    }
+
+    if (current->der != NULL)
+    {
+        _avl_destroy(current->der, destroy_data);
+    }
+
+    destroy_node(current, destroy_data);
+}
+
+void avl_destroy(AVL *abb)
+{
+    _avl_destroy(abb->raiz, abb->destroy_data);
+    free(abb);
 }
