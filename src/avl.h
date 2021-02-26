@@ -36,7 +36,6 @@ void *avl_remove(AVL *avl, const char *key);
  */
 void *avl_get(const AVL *avl, const char *key);
 
-
 /* Determina si key pertenece o no al avl.
  * Pre: La estructura avl fue inicializada
  */
@@ -103,4 +102,4 @@ bool avl_iter_in_finished(const AVL_Iter *iter);
 */
 void avl_iter_in_destroy(AVL_Iter *iter);
 
-#endif  // AVL_H
+#endif // AVL_H
