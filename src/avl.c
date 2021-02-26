@@ -35,7 +35,7 @@ typedef enum Descendancy
 
 /* Creation auxiliar functions */
 static Node *node_create(const char *key, void *data);
-static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp, Stack *insertion_walk);
+static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp, Stack *walk);
 /* Destroy auxiliar functions */
 static void destroy_node(Node *current, avl_destroy_data destroy_data);
 static void _avl_destroy(Node *current, avl_destroy_data destroy_data);
@@ -55,7 +55,7 @@ static void remove_no_children(AVL *avl, Node *previous, Node *current, Descenda
 static void remove_one_child(AVL *avl, Node *previous, Node *current, Descendancy relacion_act_ant, Descendancy current_child, bool is_root);
 static bool remove_two_children(AVL *avl, Node *previous, Node *current);
 static void analyze_paternity(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant);
-static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant);
+static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant, Stack *remove_walk);
 
     static Node *node_create(const char *key, void *data)
 {
@@ -101,22 +101,22 @@ AVL *avl_crear(avl_cmp_key cmp, avl_destroy_data destroy_data)
     return avl;
 }
 
-static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp, Stack *insertion_walk)
+static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp, Stack *walk)
 {
     if (current == NULL)
     {
         return previous;
     }
 
-    if (insertion_walk != NULL)
+    if (walk != NULL)
     {
-        push(insertion_walk, current);
+        push(walk, current);
     }
 
     int comparison = cmp(key, current->key);
 
-    return comparison == 0 ? current : comparison < 0 ? search_node(current->left, current, key, cmp)
-                                                      : search_node(current->right, current, key, cmp);
+    return comparison == 0 ? current : comparison < 0 ? search_node(current->left, current, key, cmp, walk)
+                                                      : search_node(current->right, current, key, cmp, walk);
 }
 
 static void left_left_rot(Node *a, Node *z, Node *y, Node *x, Descendancy z_des)
@@ -178,8 +178,7 @@ static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_ke
 
     if (y_des < 0 && x_des < 0)
     {
-        left_left_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT
-                                                                     : RIGHT_NODE);
+        left_left_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT : RIGHT_NODE);
         if (a == NULL)
         {
             update_root(avl, y);
@@ -196,7 +195,7 @@ static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_ke
     if (y_des < 0 && x_des > 0)
     {
         left_right_rot(z, y, x);
-        left_left_rot(a, z, x, y); // "x" in "y" param pos 'cause of the previous rotation.
+        left_left_rot(a, z, x, y, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT: RIGHT_NODE); // "x" in "y" param pos 'cause of the previous rotation.
         if (a == NULL)
         {
             update_root(avl, x);
@@ -205,7 +204,7 @@ static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_ke
     if (y_des > 0 && x_des < 0)
     {
         right_left_rot(z, y, x);
-        right_right_rot(a, z, x, y); // "x" in "y" param pos 'cause of the previous rotation.
+        right_right_rot(a, z, x, y, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT: RIGHT_NODE); // "x" in "y" param pos 'cause of the previous rotation.
         if (a == NULL)
         {
             update_root(avl, x);
@@ -232,7 +231,7 @@ static bool avl_condition(Node *z)
     {
         return false;
     }
-    return abs(node_height(z->left) - node_height(z->right)) <= 1
+    return abs(node_height(z->left) - node_height(z->right)) <= 1;
 }
 
 static void balance_tree(AVL *avl, Stack *walk)
@@ -244,9 +243,9 @@ static void balance_tree(AVL *avl, Stack *walk)
     z = pop(walk);
     a = pop(walk);
 
-    bool avl = true;
+    bool is_avl = true;
 
-    while (avl &= avl_condition(z))
+    while (is_avl &= avl_condition(z))
     {
         x = y;
         y = z;
@@ -254,9 +253,9 @@ static void balance_tree(AVL *avl, Stack *walk)
         a = pop(walk);
     }
 
-    if (!avl)
+    if (!is_avl)
     {
-        rotate_tree(avl, a, z, y, x);
+        rotate_tree(avl, a, z, y, x, avl->cmp);
     }
 }
 
@@ -298,7 +297,7 @@ bool avl_save(AVL *avl, const char *key, void *data)
 
         else if (comparison < 0)
         {
-            if ((aux->izq = node_create(key, data)) == NULL)
+            if ((aux->left = node_create(key, data)) == NULL)
             {
                 return false;
             }
@@ -306,13 +305,13 @@ bool avl_save(AVL *avl, const char *key, void *data)
 
         else if (comparison > 0)
         {
-            if ((aux->der = node_create(key, data)) == NULL)
+            if ((aux->right = node_create(key, data)) == NULL)
             {
                 return false;
             }
         }
 
-        balance_tree(insertion_walk);
+        balance_tree(avl, insertion_walk);
     }
 
     avl->count++;
@@ -323,21 +322,21 @@ bool avl_save(AVL *avl, const char *key, void *data)
 static Node *replace_node(Node *current)
 {
     Node *ant = current;
-    current = current->der;
+    current = current->right;
 
-    if (current->izq == NULL)
+    if (current->left == NULL)
     {
-        ant->der = current->der != NULL ? current->der : NULL;
+        ant->right = current->right != NULL ? current->right : NULL;
         return current;
     }
 
-    while (current->izq != NULL)
+    while (current->left != NULL)
     {
         ant = current;
-        current = current->izq;
+        current = current->left;
     }
 
-    ant->izq = current->der != NULL ? current->der : NULL;
+    ant->left = current->right != NULL ? current->right : NULL;
 
     return current;
 }
@@ -346,18 +345,18 @@ static void remove_no_children(AVL *avl, Node *previous, Node *current, Descenda
 {
     if (is_root)
     {
-        avl->raiz = NULL;
+        avl->root = NULL;
         return;
     }
 
     if (child == RIGHT_NODE)
     {
-        previous->der = NULL;
+        previous->right = NULL;
     }
 
     else
     {
-        previous->izq = NULL;
+        previous->left = NULL;
     }
 }
 
@@ -365,18 +364,18 @@ static void remove_one_child(AVL *avl, Node *previous, Node *current, Descendanc
 {
     if (is_root)
     {
-        avl->raiz = current_child == RIGHT_NODE ? current->der : current->izq;
+        avl->root = current_child == RIGHT_NODE ? current->right : current->left;
         return;
     }
 
     if (relacion_act_ant == LEFT_NODE)
     {
-        previous->izq = current_child == RIGHT_NODE ? current->der : current->izq;
+        previous->left = current_child == RIGHT_NODE ? current->right : current->left;
     }
 
     else
     {
-        previous->der = current_child == RIGHT_NODE ? current->der : current->izq;
+        previous->right = current_child == RIGHT_NODE ? current->right : current->left;
     }
 }
 
@@ -410,15 +409,15 @@ static void analyze_paternity(AVL *avl, Node *previous, Node *current, const cha
         is_root = true;
     }
 
-    if (current->izq == NULL && current->der == NULL)
+    if (current->left == NULL && current->right == NULL)
     {
         remove_no_children(avl, previous, current, relacion_act_ant, is_root);
         destroy_node(current, NULL);
     }
 
-    else if (current->izq == NULL || current->der == NULL)
+    else if (current->left == NULL || current->right == NULL)
     {
-        remove_one_child(avl, previous, current, relacion_act_ant, current->izq != NULL ? LEFT_NODE : RIGHT_NODE, is_root);
+        remove_one_child(avl, previous, current, relacion_act_ant, current->left != NULL ? LEFT_NODE : RIGHT_NODE, is_root);
         destroy_node(current, NULL);
     }
 
@@ -447,12 +446,12 @@ static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key
 
     else if (cmp > 0)
     {
-        return _avl_remove(avl, current, current->der, key, data, RIGHT_NODE, remove_walk);
+        return _avl_remove(avl, current, current->right, key, data, RIGHT_NODE, remove_walk);
     }
 
     else
     {
-        return _avl_remove(avl, current, current->izq, key, data, LEFT_NODE, remove_walk);
+        return _avl_remove(avl, current, current->left, key, data, LEFT_NODE, remove_walk);
     }
 
     return true;
@@ -473,7 +472,7 @@ void *avl_remove(AVL *avl, const char *key)
         return NULL;
     }
 
-    if (!_avl_remove(avl, NULL, avl->raiz, key, &data, 0, remove_walk))
+    if (!_avl_remove(avl, NULL, avl->root, key, &data, 0, remove_walk))
     {
         return NULL;
     }
@@ -494,7 +493,7 @@ void *avl_get(const AVL *avl, const char *key)
 
     Node *node;
 
-    if ((node = search_node(avl->root, NULL, key, avl->cmp)) == NULL)
+    if ((node = search_node(avl->root, NULL, key, avl->cmp, NULL)) == NULL)
     {
         return NULL;
     }
@@ -511,7 +510,7 @@ bool avl_belongs(const AVL *avl, const char *key)
 
     Node *node;
 
-    if ((node = buscar_nodo(avl->root, NULL, key, avl->cmp)) == NULL)
+    if ((node = search_node(avl->root, NULL, key, avl->cmp, NULL)) == NULL)
     {
         return false;
     }
@@ -541,14 +540,14 @@ static void _avl_destroy(Node *current, avl_destroy_data destroy_data)
         return;
     }
 
-    if (current->izq != NULL)
+    if (current->left != NULL)
     {
-        _avl_destroy(current->izq, destroy_data);
+        _avl_destroy(current->left, destroy_data);
     }
 
-    if (current->der != NULL)
+    if (current->right != NULL)
     {
-        _avl_destroy(current->der, destroy_data);
+        _avl_destroy(current->right, destroy_data);
     }
 
     destroy_node(current, destroy_data);
@@ -609,7 +608,7 @@ bool avl_iter_in_forward(AVL_Iter *iter)
         return false;
     }
 
-    establecer_orden_iteracion(current->der, iter->states);
+    establecer_orden_iteracion(current->right, iter->states);
 
     return true;
 }
