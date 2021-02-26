@@ -56,6 +56,8 @@ static void remove_one_child(AVL *avl, Node *previous, Node *current, Descendanc
 static bool remove_two_children(AVL *avl, Node *previous, Node *current);
 static void analyze_paternity(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant);
 static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant, Stack *remove_walk);
+/* Outer iterator auxiliar functions */
+static void enqueue_nodes(Node *current, Stack *states);
 
     static Node *node_create(const char *key, void *data)
 {
@@ -559,7 +561,7 @@ void avl_destroy(AVL *avl)
     free(avl);
 }
 
-void enqueue_nodes(Node *current, Stack *states)
+static void enqueue_nodes(Node *current, Stack *states)
 {
     if (current == NULL)
     {
@@ -608,7 +610,7 @@ bool avl_iter_in_forward(AVL_Iter *iter)
         return false;
     }
 
-    establecer_orden_iteracion(current->right, iter->states);
+    enqueue_nodes(current->right, iter->states);
 
     return true;
 }
