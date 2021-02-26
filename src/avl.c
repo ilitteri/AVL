@@ -60,7 +60,7 @@ static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key
 /* Outer iterator auxiliar function prototypes */
 void enqueue_nodes(Node *current, Stack *states);
 
-    static Node *node_create(const char *key, void *data)
+static Node *node_create(const char *key, void *data)
 {
     Node *node = malloc(sizeof(Node));
 
@@ -181,7 +181,8 @@ static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_ke
 
     if (y_des < 0 && x_des < 0)
     {
-        left_left_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT : RIGHT_NODE);
+        left_left_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT
+                                                                     : RIGHT_NODE);
         if (a == NULL)
         {
             update_root(avl, y);
@@ -189,7 +190,8 @@ static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_ke
     }
     if (y_des > 0 && x_des > 0)
     {
-        right_right_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT: RIGHT_NODE);
+        right_right_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT
+                                                                       : RIGHT_NODE);
         if (a == NULL)
         {
             update_root(avl, y);
@@ -198,7 +200,8 @@ static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_ke
     if (y_des < 0 && x_des > 0)
     {
         left_right_rot(z, y, x);
-        left_left_rot(a, z, x, y, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT: RIGHT_NODE); // "x" in "y" param pos 'cause of the previous rotation.
+        left_left_rot(a, z, x, y, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT
+                                                                     : RIGHT_NODE); // "x" in "y" param pos 'cause of the previous rotation.
         if (a == NULL)
         {
             update_root(avl, x);
@@ -207,7 +210,8 @@ static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_ke
     if (y_des > 0 && x_des < 0)
     {
         right_left_rot(z, y, x);
-        right_right_rot(a, z, x, y, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT: RIGHT_NODE); // "x" in "y" param pos 'cause of the previous rotation.
+        right_right_rot(a, z, x, y, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT
+                                                                       : RIGHT_NODE); // "x" in "y" param pos 'cause of the previous rotation.
         if (a == NULL)
         {
             update_root(avl, x);
@@ -480,7 +484,7 @@ void *avl_remove(AVL *avl, const char *key)
     {
         return NULL;
     }
-    
+
     if (parent_of_remove_key != NULL)
     {
         Stack *remove_walk;
@@ -488,7 +492,7 @@ void *avl_remove(AVL *avl, const char *key)
         {
             return NULL;
         }
-        
+
         search_node(avl->root, NULL, parent_of_remove_key, avl->cmp, remove_walk);
 
         balance_tree(avl, remove_walk);

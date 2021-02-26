@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-struct Stack;  // Definición completa en stack.c.
+struct Stack; // Definición completa en stack.c.
 typedef struct Stack Stack;
 
 // Crea una stack.
@@ -39,4 +39,4 @@ void *stack_first(const Stack *stack);
 // y la stack contiene un elemento menos.
 void *pop(Stack *stack);
 
-#endif  // STACK_H
+#endif // STACK_H
