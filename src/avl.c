@@ -154,3 +154,20 @@ void *avl_get(const AVL *avl, const char *key)
 
     return avl->cmp(node->key, key) == 0 ? node->data : NULL;
 }
+
+bool avl_belongs(const AVL *avl, const char *key)
+{
+    if (avl == NULL)
+    {
+        return false;
+    }
+
+    Node *node;
+
+    if ((node = buscar_nodo(avl->raiz, NULL, key, avl->cmp)) == NULL)
+    {
+        return false;
+    }
+
+    return avl->cmp(node->key, key) == 0;
+}
