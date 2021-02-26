@@ -580,6 +580,40 @@ void avl_destroy(AVL *avl)
     free(avl);
 }
 
+static void _avl_in_range(Node *current, bool func(const char *, void *, void *), char *extra, char *min, char *max, bool *visit, avl_cmp_key cmp)
+{
+    if (current == NULL || !(*visit))
+    {
+        return;
+    }
+
+    int min_cmp = cmp(current->key, min);
+    int max_cmp = cmp(current->key, max);
+
+    if (min_cmp > 0)
+    {
+        _avl_in_range(current->left, func, extra, min, max, visit, cmp);
+    }
+    if (*visit && min_cmp >= 0 && max_cmp <= 0)
+    {
+        *visit &= func(current->key, current->data, extra);
+    }
+    if (max_cmp < 0)
+    {
+        _avl_in_range(current->right, func, extra, min, max, visit, cmp);
+    }
+}
+
+void avl_in_range(AVL *avl, bool func(const char *, void *, void *), void *extra, char *min, char *max)
+{
+    if (avl == NULL)
+    {
+        return;
+    }
+    bool visit = true;
+    _avl_in_range(avl->root, func, extra, min, max, &visit, avl->cmp);
+}
+
 static void _avl_in_order(Node *current, bool func(const char *, void *, void *), void *extra, bool *visit)
 {
     if (current == NULL || func == NULL || !(*visit))
