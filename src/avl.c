@@ -137,3 +137,20 @@ bool avl_save(AVL *avl, const char *key, void *data)
 
     return true;
 }
+
+void *avl_get(const AVL *avl, const char *key)
+{
+    if (avl == NULL)
+    {
+        return NULL;
+    }
+
+    Node *node;
+
+    if ((node = search_node(avl->raiz, NULL, key, avl->cmp)) == NULL)
+    {
+        return NULL;
+    }
+
+    return avl->cmp(node->key, key) == 0 ? node->data : NULL;
+}
