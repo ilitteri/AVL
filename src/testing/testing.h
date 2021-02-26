@@ -6,15 +6,15 @@
 // La siguiente macro permite usar sentencias de debug (printf), pero evitando
 // que se impriman en el corrector automático (ver abajo para excepciones). La
 // macro se llama debug_print(), y se usa como printf(). Como ejemplo, si en el
-// archivo abb.c, dentro de una función llamada _abb_borrar(), se escribiese:
+// archivo avl.c, dentro de una función llamada _avl_borrar(), se escribiese:
 //
 //     debug_printf("3er caso, num_hijos=%d\n", num_hijos);
 //
 // entonces se imprimiría:
 //
-//     abb.c:147:_abb_borrar(): 3er caso, num_hijos=2
+//     avl.c:147:_avl_borrar(): 3er caso, num_hijos=2
 //
-// Nota: si alguna vez puntual se necesita forzar que se impriman los mensajes
+// Nota: si alguna vez puntual se necesita forzar que se impriman los messages
 // en el corrector, se puede usar #define DEBUG 1 antes de #include "testing.h".
 // En cualquier caso, las llamadas a debug_print() siempre deberían borrarse una
 // vez el TP pasa las pruebas, y nunca incluirse en la entrega final.
@@ -25,18 +25,18 @@
     } while (0)
 
 
-// Imprime el mensaje seguido de OK o ERROR y el número de línea. Contabiliza el
+// Imprime el message seguido de OK o ERROR y el número de línea. Contabiliza el
 // número total de errores en una variable interna. Ejemplo:
 //
 //    pila_t *p = pila_crear();
 //    print_test("La pila fue creada", p != NULL);
 //    print_test("La pila está vacía", pila_esta_vacia(p));
-#define print_test(mensaje, result) do { \
-    real_print_test(mensaje, result, __FILE__, __LINE__, #result); \
+#define print_test(message, result) do { \
+    real_print_test(message, result, __FILE__, __LINE__, #result); \
   } while (0)
 
 // Función auxiliar para print_test(). No debería ser usada directamente.
-void real_print_test(const char* mensaje, bool ok,
+void real_print_test(const char* message, bool ok,
 		     const char* file, int line, const char* failed_expr);
 
 // Devuelve el número total de errores registrados por print_test().

@@ -8,14 +8,14 @@
 
 static int _failure_count;
 
-void real_print_test(const char* mensaje, bool ok,
+void real_print_test(const char* message, bool ok,
 		     const char* file, int line, const char* failed_expr) {
 	if (ok) {
-		printf("%s... ", mensaje);
+		printf("%s... ", message);
 		if (isatty(1)==1) printf(ANSI_COLOR_LGH_GREEN);
 		printf("OK\n");
 	} else {
-		printf("%s: ",mensaje);
+		printf("%s: ",message);
 		if (isatty(1)==1) printf(ANSI_COLOR_LGH_RED);
 		printf("ERROR\n" "%s:%d: %s\n", file, line, failed_expr);
 	}

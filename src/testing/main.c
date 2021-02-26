@@ -3,22 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* ******************************************************************
- *                        PROGRAMA PRINCIPAL
- * *****************************************************************/
-
-void pruebas_avl_estudiante(void);
-void pruebas_volumen_estudiante(size_t);
+void avl_test(void);
+void avl_volume_my_tests(size_t);
 
 int main(int argc, char *argv[]) {
     if (argc > 1) {
         // Asumimos que nos están pidiendo pruebas de volumen.
-        long largo = strtol(argv[1], NULL, 10);
-        pruebas_volumen_estudiante((size_t) largo);
+        long length = strtol(argv[1], NULL, 10);
+        avl_volume_my_tests((size_t) length);
 
         return failure_count() > 0;
     }
-    printf("\n~~~ PRUEBAS ~~~\n");
-    pruebas_avl_estudiante();
+    printf("\n~~~ TESTS ~~~\n");
+    avl_test();
     return failure_count() > 0;
 }

@@ -17,7 +17,7 @@ test:
 	valgrind --leak-check=full --show-leak-kinds=all -s $(BUILD_DIR)/main
 
 coverage: 
-	./cover.sh $(SOURCE_DIR)/$(TDA).c $(SOURCE_DIR)/*.c
+	$(SOURCE_DIR)/testing/./cover.sh $(SOURCE_DIR)/$(TDA).c $(SOURCE_DIR)/*.c $(SOURCE_DIR)/testing/*.c
 
 clean:
 	rm -rf -- build
