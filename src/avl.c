@@ -26,10 +26,25 @@ struct AVL_Iter
     Stack *states;
 };
 
+typedef enum Descendancy
+{
+    ROOT,
+    LEFT_NODE,
+    RIGHT_NODE
+} Descendancy;
+
 static Node *node_create(const char *key, void *data);
 static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp, Stack *insertion_walk);
 static void destroy_node(Node *current, avl_destroy_data destroy_data)
 static void _avl_destroy(Node *current, avl_destroy_data destroy_data)
+static void left_left_rot(Node *a, Node *z, Node *y, Node *x, Descendancy z_des);
+static void right_right_rot(Node *a, Node *z, Node *y, Node *x, Descendancy z_des);
+static void left_right_rot(Node *z, Node *y, Node *x);
+static void right_left_rot(Node *z, Node *y, Node *x);
+static void update_root(AVL *avl, Node *node);
+static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_key cmp);
+static bool avl_condition(Node *z);
+static void balance_tree(AVL *avl, Stack *insertion_walk)
 
 static Node *node_create(const char *key, void *data)
 {
@@ -93,6 +108,99 @@ static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp
                                                        : search_node(current->right, current, key, cmp);
 }
 
+static void left_left_rot(Node *a, Node *z, Node *y, Node *x, Descendancy z_des)
+{
+    if (z_des == LEFT_NODE)
+    {
+        a->left = y;
+    }
+
+    else if (z_des == RIGHT_NODE)
+    {
+        a->right = y;
+    }
+
+    z->left = y->right;
+    y->right = z;
+}
+
+static void right_right_rot(Node *a, Node *z, Node *y, Node *x, Descendancy z_des)
+{
+    if (z_des == LEFT_NODE)
+    {
+        a->left = y;
+    }
+
+    else if (z_des == RIGHT_NODE)
+    {
+        a->right = y;
+    }
+
+    z->right = y->left;
+    y->left = z;
+}
+
+static void left_right_rot(Node *z, Node *y, Node *x)
+{
+    z->left = x;
+    y->right = x->left;
+    x->left = y;
+}
+
+static void right_left_rot(Node *z, Node *y, Node *x)
+{
+    z->right = x;
+    y->left = x->right;
+    x->right = y;
+}
+
+static void update_root(AVL *avl, Node *node)
+{
+    avl->root = node;
+}
+
+static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_key cmp)
+{
+    int z_des = a != NULL ? cmp(z->key, a->key) : ROOT;
+    int y_des = cmp(y->key, z->key);
+    int x_des = cmp(x->key, y->key);
+
+    if (y_des < 0 && x_des < 0)
+    {
+        left_left_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT : RIGHT_NODE);
+        if (a == NULL)
+        {
+            update_root(avl, y);
+        }
+    }
+    if (y_des > 0 && x_des > 0)
+    {
+        right_right_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT : RIGHT_NODE);
+        if (a == NULL)
+        {
+            update_root(avl, y);
+        }
+    }
+    if (y_des < 0 && x_des > 0)
+    {
+        left_right_rot(z, y, x);
+        left_left_rot(a, z, x, y); // "x" in "y" param pos 'cause of the previous rotation.
+        if (a == NULL)
+        {
+            update_root(avl, x);
+        }
+    }
+    if (y_des > 0 && x_des < 0)
+    {
+        right_left_rot(z, y, x);
+        right_right_rot(a, z, x, y); // "x" in "y" param pos 'cause of the previous rotation.
+        if (a == NULL)
+        {
+            update_root(avl, x);
+        }
+    }
+}
+
 static bool avl_condition(Node *z)
 {
     if (z == NULL)
@@ -102,7 +210,7 @@ static bool avl_condition(Node *z)
     return abs(node_height(z->left) - node_height(z->right)) <= 1
 }
 
-static void is_avl(Stack *insertion_walk)
+static void balance_tree(AVL *avl, Stack *insertion_walk)
 {
     Node *x, *y, *z, *a;
 
@@ -123,7 +231,7 @@ static void is_avl(Stack *insertion_walk)
 
     if (!avl)
     {
-       balance_tree(a, z, y, x);
+       rotate_tree(avl, a, z, y, x);
     }
 }
 
@@ -174,7 +282,7 @@ bool avl_save(AVL *avl, const char *key, void *data)
             }
         }
 
-        is_avl(insertion_walk);
+        balance_tree(insertion_walk);
     }
 
     avl->count++;
