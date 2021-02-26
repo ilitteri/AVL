@@ -187,8 +187,7 @@ static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_ke
     }
     if (y_des > 0 && x_des > 0)
     {
-        right_right_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT
-                                                                       : RIGHT_NODE);
+        right_right_rot(a, z, y, x, z_des < 0 ? LEFT_NODE : z_des == 0 ? ROOT: RIGHT_NODE);
         if (a == NULL)
         {
             update_root(avl, y);
@@ -236,14 +235,14 @@ static bool avl_condition(Node *z)
     return abs(node_height(z->left) - node_height(z->right)) <= 1
 }
 
-static void balance_tree(AVL *avl, Stack *insertion_walk)
+static void balance_tree(AVL *avl, Stack *walk)
 {
     Node *x, *y, *z, *a;
 
-    x = pop(insertion_walk);
-    y = pop(insertion_walk);
-    z = pop(insertion_walk);
-    a = pop(insertion_walk);
+    x = pop(walk);
+    y = pop(walk);
+    z = pop(walk);
+    a = pop(walk);
 
     bool avl = true;
 
@@ -252,7 +251,7 @@ static void balance_tree(AVL *avl, Stack *insertion_walk)
         x = y;
         y = z;
         z = a;
-        a = pop(insertion_walk);
+        a = pop(walk);
     }
 
     if (!avl)
@@ -278,7 +277,12 @@ bool avl_save(AVL *avl, const char *key, void *data)
 
     else
     {
-        Stack *insertion_walk = stack_create();
+        Stack *insertion_walk;
+        if ((insertion_walk = stack_create()) == NULL)
+        {
+            return false;
+        }
+
         Node *aux = search_node(avl->root, NULL, key, avl->cmp, insertion_walk);
         int comparison = avl->cmp(key, aux->key);
 
@@ -422,11 +426,16 @@ static void analyze_paternity(AVL *avl, Node *previous, Node *current, const cha
         remove_two_children(avl, previous, current);
 }
 
-static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant)
+static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant, Stack *remove_walk)
 {
     if (current == NULL)
     {
         return false;
+    }
+
+    if (remove_walk != NULL)
+    {
+        push(remove_walk, current);
     }
 
     int cmp = avl->cmp(key, current->key);
@@ -438,12 +447,12 @@ static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key
 
     else if (cmp > 0)
     {
-        return _avl_remove(avl, current, current->der, key, data, RIGHT_NODE);
+        return _avl_remove(avl, current, current->der, key, data, RIGHT_NODE, remove_walk);
     }
 
     else
     {
-        return _avl_remove(avl, current, current->izq, key, data, LEFT_NODE);
+        return _avl_remove(avl, current, current->izq, key, data, LEFT_NODE, remove_walk);
     }
 
     return true;
@@ -457,11 +466,19 @@ void *avl_remove(AVL *avl, const char *key)
     }
 
     void *data = NULL;
-
-    if (!_avl_remove(avl, NULL, avl->raiz, key, &data, 0))
+    
+    Stack *remove_walk = stack_create();
+    if ((remove_walk = stack_create()) == NULL)
     {
         return NULL;
     }
+
+    if (!_avl_remove(avl, NULL, avl->raiz, key, &data, 0, remove_walk))
+    {
+        return NULL;
+    }
+
+    balance_tree(avl, remove_walk);
 
     avl->count--;
 
