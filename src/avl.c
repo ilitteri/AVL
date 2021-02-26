@@ -33,10 +33,13 @@ typedef enum Descendancy
     RIGHT_NODE
 } Descendancy;
 
+/* Creation auxiliar functions */
 static Node *node_create(const char *key, void *data);
 static Node *search_node(Node *current, Node *previous, const char *key, avl_cmp_key cmp, Stack *insertion_walk);
+/* Destroy auxiliar functions */
 static void destroy_node(Node *current, avl_destroy_data destroy_data);
 static void _avl_destroy(Node *current, avl_destroy_data destroy_data);
+/* Balance auxiliar functions */
 static void left_left_rot(Node *a, Node *z, Node *y, Node *x, Descendancy z_des);
 static void right_right_rot(Node *a, Node *z, Node *y, Node *x, Descendancy z_des);
 static void left_right_rot(Node *z, Node *y, Node *x);
@@ -45,7 +48,14 @@ static void update_root(AVL *avl, Node *node);
 static void rotate_tree(AVL *avl, Node *a, Node *z, Node *y, Node *x, avl_cmp_key cmp);
 static size_t node_height(const Node *current);
 static bool avl_condition(Node *z);
-static void balance_tree(AVL *avl, Stack *insertion_walk)
+static void balance_tree(AVL *avl, Stack *insertion_walk);
+/* Remove auxiliar functions */
+static Node *replace_node(Node *current);
+static void remove_no_children(AVL *avl, Node *previous, Node *current, Descendancy child, bool is_root);
+static void remove_one_child(AVL *avl, Node *previous, Node *current, Descendancy relacion_act_ant, Descendancy current_child, bool is_root);
+static bool remove_two_children(AVL *avl, Node *previous, Node *current);
+static void analyze_paternity(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant);
+static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant);
 
     static Node *node_create(const char *key, void *data)
 {
@@ -306,6 +316,158 @@ bool avl_save(AVL *avl, const char *key, void *data)
     return true;
 }
 
+static Node *replace_node(Node *current)
+{
+    Node *ant = current;
+    current = current->der;
+
+    if (current->izq == NULL)
+    {
+        ant->der = current->der != NULL ? current->der : NULL;
+        return current;
+    }
+
+    while (current->izq != NULL)
+    {
+        ant = current;
+        current = current->izq;
+    }
+
+    ant->izq = current->der != NULL ? current->der : NULL;
+
+    return current;
+}
+
+static void remove_no_children(AVL *avl, Node *previous, Node *current, Descendancy child, bool is_root)
+{
+    if (is_root)
+    {
+        avl->raiz = NULL;
+        return;
+    }
+
+    if (child == RIGHT_NODE)
+    {
+        previous->der = NULL;
+    }
+
+    else
+    {
+        previous->izq = NULL;
+    }
+}
+
+static void remove_one_child(AVL *avl, Node *previous, Node *current, Descendancy relacion_act_ant, Descendancy current_child, bool is_root)
+{
+    if (is_root)
+    {
+        avl->raiz = current_child == RIGHT_NODE ? current->der : current->izq;
+        return;
+    }
+
+    if (relacion_act_ant == LEFT_NODE)
+    {
+        previous->izq = current_child == RIGHT_NODE ? current->der : current->izq;
+    }
+
+    else
+    {
+        previous->der = current_child == RIGHT_NODE ? current->der : current->izq;
+    }
+}
+
+static bool remove_two_children(AVL *avl, Node *previous, Node *current)
+{
+    Node *replacement = replace_node(current);
+
+    free(current->key);
+    char *copy = malloc(strlen(replacement->key) + 1);
+    if (copy == NULL)
+    {
+        return false;
+    }
+    strcpy(copy, replacement->key);
+
+    current->key = copy;
+    current->data = replacement->data;
+
+    destroy_node(replacement, NULL);
+
+    return true;
+}
+
+static void analyze_paternity(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant)
+{
+    bool is_root = false;
+    *data = current->data;
+
+    if (previous == NULL)
+    {
+        is_root = true;
+    }
+
+    if (current->izq == NULL && current->der == NULL)
+    {
+        remove_no_children(avl, previous, current, relacion_act_ant, is_root);
+        destroy_node(current, NULL);
+    }
+
+    else if (current->izq == NULL || current->der == NULL)
+    {
+        remove_one_child(avl, previous, current, relacion_act_ant, current->izq != NULL ? LEFT_NODE : RIGHT_NODE, is_root);
+        destroy_node(current, NULL);
+    }
+
+    else
+        remove_two_children(avl, previous, current);
+}
+
+static bool _avl_remove(AVL *avl, Node *previous, Node *current, const char *key, void **data, Descendancy relacion_act_ant)
+{
+    if (current == NULL)
+    {
+        return false;
+    }
+
+    int cmp = avl->cmp(key, current->key);
+
+    if (cmp == 0)
+    {
+        analyze_paternity(avl, previous, current, key, data, relacion_act_ant);
+    }
+
+    else if (cmp > 0)
+    {
+        return _avl_remove(avl, current, current->der, key, data, RIGHT_NODE);
+    }
+
+    else
+    {
+        return _avl_remove(avl, current, current->izq, key, data, LEFT_NODE);
+    }
+
+    return true;
+}
+
+void *avl_remove(AVL *avl, const char *key)
+{
+    if (avl == NULL || avl->count == 0)
+    {
+        return NULL;
+    }
+
+    void *data = NULL;
+
+    if (!_avl_remove(avl, NULL, avl->raiz, key, &data, 0))
+    {
+        return NULL;
+    }
+
+    avl->count--;
+
+    return data;
+}
+
 void *avl_get(const AVL *avl, const char *key)
 {
     if (avl == NULL)
@@ -435,7 +597,7 @@ bool avl_iter_in_forward(AVL_Iter *iter)
     return true;
 }
 
-const char *avl_iter_in_get_actual(const AVL_Iter *iter)
+const char *avl_iter_in_get_current(const AVL_Iter *iter)
 {
     return stack_is_empty(iter->states) ? NULL : ((Node *)stack_first(iter->states))->key;
 }
