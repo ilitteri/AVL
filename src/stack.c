@@ -2,7 +2,7 @@
 
 #include "stack.h"
 
-#define SIZE 8
+#define SIZE 128
 #define ENLARGE_FACTOR 2
 #define REDUCTION_FACTOR 0.5
 #define REDUCTION_LIMIT 0.25

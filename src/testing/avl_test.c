@@ -7,7 +7,7 @@
 #include "../avl.h"
 #include "testing.h"
 
-#define VOLUMEN 100
+#define VOLUMEN 5000
 #define INT_ARRAY_LENGHT_6 6
 #define INT_ARRAY_LENGTH_7 7
 #define STRING_LENGTH 7
